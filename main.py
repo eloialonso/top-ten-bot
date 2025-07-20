@@ -84,6 +84,9 @@ def play_round(players, colors, round_number):
             input("Notez et passer.")
     clear_screen()
 
+    print("\n--- Thème ---")
+    print(theme)
+
     print("\n--- Ordre de passage ---")
     for idx, p in enumerate(order,1): clr=colors[p['name']]; print(f"{idx}. {clr}{p['name']}{Style.RESET_ALL}")
     print()
@@ -95,7 +98,7 @@ def play_round(players, colors, round_number):
         if p['kind']=='human':
             text=input(f"{clr}{p['name']}{Style.RESET_ALL} : ")
         else:
-            text=get_ai_suggestion(theme,p['number'],sorted(prev))
+            text=get_ai_suggestion(theme, p['number'], prev)
             print(f"{clr}{p['name']}{Style.RESET_ALL}: {text}")
         prev.append((p['number'],text))
         print()
