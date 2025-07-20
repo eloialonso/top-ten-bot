@@ -2,11 +2,18 @@ import os
 import sys
 import random
 import openai
+from colorama import init, Fore, Style
+
+# Initialize colorama
+init(autoreset=True)
 
 # List of fun AI player names
 AI_NAME_POOL = [
     "TurboBot", "FunkyBot", "RoboClown", "ChattyAI", "MisterGiggles", "DrLudique", "PixelPirate", "Écho", "Galacto", "Zigzag"
 ]
+
+# Available colors for players
+COLORS = [Fore.RED, Fore.GREEN, Fore.YELLOW, Fore.BLUE, Fore.MAGENTA, Fore.CYAN]
 
 
 def clear_screen():
@@ -14,119 +21,107 @@ def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
 
 
+def assign_colors(players):
+    """Assign a unique color to each player, cycling through COLORS"""
+    return {p['name']: COLORS[i % len(COLORS)] for i, p in enumerate(players)}
+
+
 def get_ai_suggestion(theme, number, previous_suggestions):
     """
-    Calls the ChatGPT API to generate a suggestion for the given theme and intensity number (1–10),
-    adapting length/style to previous suggestions.
-    Suggestions are in French and playful.
+    Calls ChatGPT to generate exactly one suggestion (not a list) matching the theme and intensity.
+    Always respond with a single concise item, no enumeration. Use previous_suggestions to adjust tone.
     """
-    avg_length = 0
-    if previous_suggestions:
-        avg_length = sum(len(text) for _, text in previous_suggestions) / len(previous_suggestions)
-    style_instruction = (
-        "Reste succinct et direct." if avg_length < 30 else "Fournis un peu plus de détails et de couleur."
-    )
     messages = [
         {"role": "system", "content": (
-            "You are a playful Top Ten AI player. "
-            "Players propose items for a French theme, each with an intensity number from 1 (mildest) to 10 (wildest). "
-            "Adapt the length of your answer: " + style_instruction + " "
-            "Generate fun, imaginative suggestions matching your intensity. Respond in French."
+            "You are an AI player in Top Ten. "
+            "Given a French theme and a unique intensity from 1 (très léger) to 10 (très fort), "
+            "you must propose exactly one suggestion that fits this intensity. "
+            "Do not list multiple items or numbers—just one. "
+            "Keep it brief (one short sentence). For example, if theme is 'Un animal pour convaincre un enfant de venir au zoo', a good answer for intensity 1 would be 'une huitre', a good intensity 5 would be 'un chat sauvage', and a good intensity 10 would be 'un t-rex'. Also, keep in mind that you have to guess yourself the intensity of previous players and try and adapt your proposition to be in the right range of intensity (because the captain of the game will try and guess the different ranks once all propositions have been submitted)."
         )},
         {"role": "user", "content": (
             f"Thème : {theme}\n"
-            f"Votre intensité (1–10) : {number}\n"
-            "Suggestions précédentes :\n" +
+            f"Intensité assignée : {number}\n"
+            "Écoutez bien les propositions déjà faites, et adaptez la vôtre :\n" +
             "\n".join(f"{num} : {text}" for num, text in previous_suggestions)
         )}
     ]
     try:
-        response = openai.chat.completions.create(
+        resp = openai.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
-            temperature=0.8,
-            max_tokens=80
+            temperature=0.7,
+            max_tokens=40
         )
-        suggestion = response.choices[0].message.content.strip()
+        return resp.choices[0].message.content.strip()
     except Exception as e:
-        print(f"Erreur API ChatGPT : {e}", file=sys.stderr)
-        suggestion = "[IA indisponible — erreur]"
-    return suggestion
+        print(f"ChatGPT API error: {e}", file=sys.stderr)
+        return "[IA indisponible]"
 
 
-def play_round(players, round_number):
-    """Play a single round with rotating captain."""
-    total_players = len(players)
-    captain_idx = round_number % total_players
-    captain = players[captain_idx]
+def play_round(players, colors, round_number):
+    total = len(players)
+    cap_idx = round_number % total
+    captain = players[cap_idx]
     others = [p for p in players if p != captain]
 
-    print(f"\n=== Manche {round_number + 1} — Capitaine : {captain['name']} ===")
-    theme = input("Entrez le thème de la manche (en français) : ")
+    clr_cap = colors[captain['name']]
+    print(f"\n=== Manche {round_number+1} — Capitaine : {clr_cap}{captain['name']}{Style.RESET_ALL} ===")
+    theme = input("Entrez le thème (en français) : ")
 
     intensities = random.sample(range(1, 11), k=len(others))
     random.shuffle(others)
-    turn_order = [{"name": p['name'], "kind": p['kind'], "number": num}
-                  for p, num in zip(others, intensities)]
+    order = [{"name": p['name'], "kind": p['kind'], "number": i}
+             for p, i in zip(others, intensities)]
 
-    # Reveal numbers privately with computer pass
-    for p in turn_order:
-        if p['kind'] == 'human':
+    for p in order:
+        if p['kind']=='human':
+            clr = colors[p['name']]
             clear_screen()
-            print(f"C'est au tour de {p['name']} de prendre l'ordinateur pour voir son intensité.")
-            input("Appuyez sur Entrée quand vous êtes prêt...")
-            print(f"Votre intensité est {p['number']}")
-            input("Notez-la puis appuyez sur Entrée pour continuer, et assurez-vous que personne d'autre ne regarde.")
+            print(f"À {clr}{p['name']}{Style.RESET_ALL}, prendre l'ordi.")
+            input("Prêt ?")
+            print(f"Votre intensité : {clr}{p['number']}{Style.RESET_ALL}")
+            input("Notez et passer.")
     clear_screen()
 
     print("\n--- Ordre de passage ---")
-    for idx, p in enumerate(turn_order, start=1):
-        print(f"Position {idx} : {p['name']}")
+    for idx, p in enumerate(order,1): clr=colors[p['name']]; print(f"{idx}. {clr}{p['name']}{Style.RESET_ALL}")
+    print()
 
-    print("\n--- Début des propositions ---")
-    suggestions = []
-    for p in turn_order:
-        if p['kind'] == 'human':
-            text = input(f"{p['name']} (votre intensité) : votre proposition : ")
+    print("--- Propositions ---")
+    prev=[]
+    for p in order:
+        clr=colors[p['name']]
+        if p['kind']=='human':
+            text=input(f"{clr}{p['name']}{Style.RESET_ALL} : ")
         else:
-            text = get_ai_suggestion(theme, p['number'], sorted(suggestions, key=lambda x: x[0]))
-            print(f"{p['name']} propose : {text}")
-        suggestions.append((p['number'], text))
+            text=get_ai_suggestion(theme,p['number'],sorted(prev))
+            print(f"{clr}{p['name']}{Style.RESET_ALL}: {text}")
+        prev.append((p['number'],text))
+        print()
 
-    # Captain makes guess
-    print(f"\n{captain['name']}, entrez l'ordre des intensités (séparées par espaces) : ")
-    guess_input = input().strip()
-    guessed_order = guess_input.split()
-    print(f"Vous avez deviné : {' '.join(guessed_order)}")
+    #print(f"{clr_cap}{captain['name']}{Style.RESET_ALL}, devinez l'ordre (ex: 3 1 2 ...):")
+    #guess=input().strip()
+    #print("Vous avez deviné :",guess)
 
-    print("\n--- Propositions finales (ordre par intensité) ---")
-    for num, text in sorted(suggestions, key=lambda x: x[0]):
-        print(f"{num} : {text}")
-    print(f"\n{captain['name']}, comparez votre ordre à la réalité.")
+    input("\n--- Résultats (par intensité) ---")
+    for n,t in sorted(prev): print(f"{n}: {t}")
 
 
 def main():
-    openai.api_key = os.getenv("OPENAI_API_KEY")
-    if not openai.api_key:
-        print("Erreur : définissez OPENAI_API_KEY.")
-        return
-
-    num_humans = int(input("Nombre de joueurs humains : "))
-    human_names = [input(f"Prénom du joueur humain #{i+1} : ") for i in range(num_humans)]
-    num_ai = int(input("Nombre de joueurs IA : "))
-    ai_names = random.sample(AI_NAME_POOL, k=num_ai)
-    players = [{"name": n, "kind": "human"} for n in human_names] + \
-              [{"name": n, "kind": "ai"} for n in ai_names]
-
-    round_number = 0
+    openai.api_key=os.getenv("OPENAI_API_KEY")
+    if not openai.api_key: print("Définir OPENAI_API_KEY");return
+    nh=int(input("Nb humains: "))
+    humans=[input(f"Prénom #{i+1}: ") for i in range(nh)]
+    nai=int(input("Nb IA: "))
+    ais=random.sample(AI_NAME_POOL,k=nai)
+    players=[{'name':n,'kind':'human'} for n in humans]+[{'name':n,'kind':'ai'} for n in ais]
+    colors=assign_colors(players)
+    r=0
     while True:
-        play_round(players, round_number)
-        round_number += 1
-        cont = input("\nLancer une nouvelle manche ? (o/n) : ")
-        if cont.lower() != 'o':
-            print("Fin de la partie. Merci d'avoir joué !")
-            break
+        play_round(players,colors,r)
+        r+=1
+        if input("Encore ? (o/n):").lower()!='o':break
 
-if __name__ == "__main__":
-    main()
+if __name__=='__main__': main()
 

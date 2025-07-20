@@ -236,11 +236,15 @@ name = "top10"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "colorama" },
     { name = "openai" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "openai", specifier = ">=1.97.0" }]
+requires-dist = [
+    { name = "colorama", specifier = ">=0.4.6" },
+    { name = "openai", specifier = ">=1.97.0" },
+]
 
 [[package]]
 name = "tqdm"
