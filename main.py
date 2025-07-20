@@ -124,7 +124,8 @@ def main():
     while True:
         play_round(players,colors,r)
         r+=1
-        if input("Encore ? (o/n):").lower()!='o':break
+        if input("Encore ? (O/n):").lower() == 'n':
+            break
 
 if __name__=='__main__': main()
 
