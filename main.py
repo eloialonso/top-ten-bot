@@ -43,7 +43,7 @@ def get_ai_suggestion(theme, number, previous_suggestions):
             f"Thème : {theme}\n"
             f"Intensité assignée : {number}\n"
             "Écoutez bien les propositions déjà faites, et adaptez la vôtre :\n" +
-            "\n".join(f"{num} : {text}" for num, text in previous_suggestions)
+            "\n".join(f"Player {num} : {text}" for num, (_, text) in enumerate(previous_suggestions))
         )}
     ]
     try:
