@@ -60,6 +60,7 @@ def get_ai_suggestion(theme, number, previous_suggestions):
 
 
 def play_round(players, colors, round_number):
+    clear_screen()
     total = len(players)
     cap_idx = round_number % total
     captain = players[cap_idx]
