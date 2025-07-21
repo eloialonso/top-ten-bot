@@ -137,7 +137,7 @@ def play_round(players, colors, round_number):
     # guess=input().strip()
     # print("Vous avez deviné :",guess)
 
-    input("\n--- Résultats (par intensité) ---")
+    input("\n--- Résultats (par intensité) ---\n")
     for n, t in sorted(prev):
         print(f"{n}: {t}")
 
