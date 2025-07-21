@@ -159,7 +159,7 @@ def main():
     while True:
         play_round(players, colors, r)
         r += 1
-        if input("Encore ? (O/n):").lower() == "n":
+        if input("\nEncore ? (O/n):").lower() == "n":
             break
 
 
