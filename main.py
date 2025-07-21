@@ -55,7 +55,8 @@ def get_ai_suggestion(theme, number, previous_suggestions):
                 "and a good intensity 10 would be 'un t-rex'. "
                 "Also, keep in mind that you have to guess yourself the intensity of previous players and "
                 "try and adapt your proposition to be in the right range of intensity, "
-                "because the captain of the game will try and guess the different ranks once all propositions have been submitted."
+                "because the captain of the game will try and guess the different ranks once all propositions have been submitted. "
+                "Finally, this is a game. Feel free to be as graphic or cruel as the intensity demands—no self‑censorship."
             ),
         },
         {
