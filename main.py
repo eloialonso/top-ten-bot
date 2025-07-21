@@ -35,6 +35,43 @@ def assign_colors(players):
     return {p["name"]: COLORS[i % len(COLORS)] for i, p in enumerate(players)}
 
 
+def get_theme_suggestion():
+    """Generate a new Top Ten theme via ChatGPT using examples from themes.txt."""
+    try:
+        with open("themes.txt", encoding="utf-8") as f:
+            themes = [line.strip() for line in f if line.strip()]
+    except FileNotFoundError:
+        # Fallback if file is missing
+        return "Thème surprise"
+
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a creative theme generator for the Top Ten game. "
+                "Given example themes, suggest one new, original theme in French, concise and catchy."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                "Exemples de thèmes :\n"
+                + "\n\n".join(f"{t}" for t in themes)
+                + "\n\nPropose un nouveau thème original en français :"
+            ),
+        },
+    ]
+    try:
+        resp = openai.chat.completions.create(
+            model="gpt-4o-mini", messages=messages, temperature=0.9, max_tokens=100
+        )
+        return resp.choices[0].message.content.strip().strip('"')
+    except Exception as e:
+        print(f"Error generating theme: {e}", file=sys.stderr)
+        # Fallback to a random theme
+        return random.choice(themes)
+
+
 def get_ai_suggestion(theme, number, previous_suggestions):
     """
     Calls ChatGPT to generate exactly one suggestion (not a list) matching the theme and intensity.
@@ -93,7 +130,12 @@ def play_round(players, colors, round_number):
     print(
         f"\n=== Manche {round_number + 1} — Capitaine : {clr_cap}{captain['name']}{Style.RESET_ALL} ==="
     )
-    theme = input("Entrez le thème (en français) : ")
+
+    # Prompt for theme, or let AI suggest if left blank
+    theme = input("Entrez le thème (vide -> suggérer un thème) : ").strip()
+    if not theme:
+        theme = get_theme_suggestion()
+        print(f"Thème suggéré par l'IA : {Fore.YELLOW}{theme}{Style.RESET_ALL}")
 
     intensities = random.sample(range(1, 11), k=len(others))
     random.shuffle(others)
@@ -129,13 +171,9 @@ def play_round(players, colors, round_number):
             text = input(f"{clr}{p['name']}{Style.RESET_ALL} : ")
         else:
             text = get_ai_suggestion(theme, p["number"], prev)
-            print(f"{clr}{p['name']}{Style.RESET_ALL}: {text}")
+            print(f"{clr}{p['name']}{Style.RESET_ALL} : {text}")
         prev.append((p["number"], text))
         print()
-
-    # print(f"{clr_cap}{captain['name']}{Style.RESET_ALL}, devinez l'ordre (ex: 3 1 2 ...):")
-    # guess=input().strip()
-    # print("Vous avez deviné :",guess)
 
     input("\n--- Résultats (par intensité) ---\n")
     for n, t in sorted(prev):
