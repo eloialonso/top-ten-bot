@@ -104,7 +104,7 @@ def get_ai_suggestion(theme, number, previous_suggestions):
                 "Écoutez bien les propositions déjà faites, et adaptez la vôtre :\n"
                 + "\n".join(
                     f"Player {num} : {text}"
-                    for num, (_, text) in enumerate(previous_suggestions)
+                    for num, (_, _, text) in enumerate(previous_suggestions)
                 )
             ),
         },
@@ -131,11 +131,15 @@ def play_round(players, colors, round_number):
         f"\n=== Manche {round_number + 1} — Capitaine : {clr_cap}{captain['name']}{Style.RESET_ALL} ==="
     )
 
-    # Prompt for theme, or let AI suggest if left blank
-    theme = input("Entrez le thème (vide -> suggérer un thème) : ").strip()
+    theme = input("Entrez le thème (laisser vide pour suggérer un thème) : ").strip()
     if not theme:
-        theme = get_theme_suggestion()
-        print(f"Thème suggéré par l'IA : {Fore.YELLOW}{theme}{Style.RESET_ALL}")
+        while True:
+            theme = get_theme_suggestion()
+            print(
+                f"\n--- Thème suggéré par l'IA  ---\n {Fore.YELLOW}{theme}{Style.RESET_ALL}\n"
+            )
+            if input("C'est parti? (O/n) ").lower() != "n":
+                break
 
     intensities = random.sample(range(1, 11), k=len(others))
     random.shuffle(others)
@@ -172,12 +176,13 @@ def play_round(players, colors, round_number):
         else:
             text = get_ai_suggestion(theme, p["number"], prev)
             print(f"{clr}{p['name']}{Style.RESET_ALL} : {text}")
-        prev.append((p["number"], text))
+        prev.append((p["number"], p["name"], text))
         print()
 
-    input("\n--- Résultats (par intensité) ---\n")
-    for n, t in sorted(prev):
-        print(f"{n}: {t}")
+    input("\n--- Presser 'Entrer' pour afficher les résultats ---\n")
+    for intensity, name, text in sorted(prev):
+        clr = colors[name]
+        print(f"{clr}{intensity} ({name}){Style.RESET_ALL}\n{text}\n")
 
 
 def main():
