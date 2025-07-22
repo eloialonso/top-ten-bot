@@ -136,7 +136,7 @@ def play_round(players, colors, round_number):
         while True:
             theme = get_theme_suggestion()
             print(
-                f"\n--- Thème suggéré par l'IA  ---\n {Fore.YELLOW}{theme}{Style.RESET_ALL}\n"
+                f"\n--- Thème suggéré par l'IA  ---\n{Fore.YELLOW}{theme}{Style.RESET_ALL}\n"
             )
             if input("C'est parti? (O/n) ").lower() != "n":
                 break
