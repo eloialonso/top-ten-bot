@@ -36,7 +36,8 @@ Follow the uv doc: [https://docs.astral.sh/uv/getting-started/installation/](htt
 ## Running the Game
 
 ```bash
-uv run main.py
+cd top-ten-bot
+uv run --env-file .env main.py
 ```
 
 * Enter number of human and AI players, player names, and themes as prompted.
